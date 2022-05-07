@@ -6,8 +6,10 @@ import ipaddress
 class HostDiscovery:
     PORT = 6000
     FORMAT = 'utf-8'
-    HELLO = "HELLO"
-    HELLO_LENGTH = 5
+    HELLO = "11111"
+    REJECT = "00000"
+    MESSAGE_LENGTH = 5
+
     def __init__(self):
         self.server = None
         self.active = None
@@ -32,12 +34,12 @@ class HostDiscovery:
             if address[0] == str(self.ip):
                 continue
             try:
-                message = conn.recv(self.HELLO_LENGTH).decode(self.FORMAT)
+                message = conn.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
                 if message == self.HELLO:
                     connected = False
             except:
                 continue
-        print(f"[NEW CONNECTION] {address[0]} on port {address[1]}")
+        print(f"[NEW CONNECTION REQUESTED] {address[0]} on port {address[1]}")
         return conn, address
 
     def stop(self):
@@ -51,12 +53,42 @@ class HostDiscovery:
         self.server.listen()
 
     def connect(self, host):
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        establish_connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            client.connect((host, self.PORT))
-            client.send(self.HELLO.encode())
-            return client
+            establish_connection_socket.connect((host, self.PORT))
+            establish_connection_socket.send(self.HELLO.encode())
+            while True:
+                message = establish_connection_socket.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
+                if message == self.HELLO:
+                    address = establish_connection_socket.recv(16).encode(self.FORMAT)
+                    port = establish_connection_socket.recv(16).encode(self.FORMAT)
+                    establish_connection_socket.close()
+                    peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    peer_socket.connect((address, int(port)))
+                    return peer_socket
+                elif message == self.REJECT:
+                    return False
+                else:
+                    continue
         except:
             return False
+
+    def accept(self, peer):
+        while True:
+            ans = input(f"Accept connection from {peer[1][0]} ? (y/n)")
+            if ans == 'y' and ans == 'Y':
+                peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                peer_socket.bind(self.ip, peer[1][1])
+                peer[0].send(self.HELLO.encode(self.FORMAT))
+                peer[0].send(self.ip.encode(self.FORMAT))
+                peer[0].send(peer[1][1].encode(self.FORMAT))
+                return peer_socket
+            elif ans == 'n' or ans == 'N':
+                peer[0].send(self.REJECT.encode(self.FORMAT))
+                print(f"Connection with {peer} closed")
+                return False
+            else:
+                continue
+
 
 
