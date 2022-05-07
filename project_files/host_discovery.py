@@ -37,9 +37,10 @@ class HostDiscovery:
             try:
                 while True:
                     message = conn.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
-                    print(f"Message: {message}")
+                    # print(f"Message: {message}")
                     if message == self.HELLO:
                         connected = False
+                        break
                     else:
                         continue
             except:
@@ -78,12 +79,13 @@ class HostDiscovery:
 
     def accept(self, peer):
         while True:
-            ans = input(f"Accept connection from {peer[1][0]} ? (y/n)")
+            ans = input(f"Accept connection from {peer[1][0]} ? (y/n) ")
             if ans == 'y' or ans == 'Y':
                 peer[0].send(self.HELLO.encode(self.FORMAT))
                 return peer[0]
             elif ans == 'n' or ans == 'N':
                 peer[0].send(self.REJECT.encode(self.FORMAT))
+                peer[0].close()
                 print(f"Connection with {peer} closed")
                 return False
             else:
