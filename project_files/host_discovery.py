@@ -35,9 +35,13 @@ class HostDiscovery:
             if address[0] == str(self.ip):
                 continue
             try:
-                message = conn.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
-                if message == self.HELLO:
-                    connected = False
+                while True:
+                    message = conn.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
+                    print(f"Message: {message}")
+                    if message == self.HELLO:
+                        connected = False
+                    else:
+                        continue
             except:
                 continue
         print(f"[NEW CONNECTION REQUESTED] {address[0]} on port {address[1]}")
@@ -55,9 +59,11 @@ class HostDiscovery:
 
     def connect(self, host):
         port = self.reserved_ports[-1] + 1
+        self.reserved_ports.append(port)
         peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         peer.bind((str(self.ip), port))
         peer.connect((host, self.PORT))
+        peer.send(self.HELLO.encode(self.FORMAT))
         while True:
             msg = peer.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
             if msg == self.HELLO:
