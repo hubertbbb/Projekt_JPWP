@@ -11,6 +11,7 @@ class HostDiscovery:
     MESSAGE_LENGTH = 5
 
     def __init__(self):
+        self.reserved_ports = [self.PORT]
         self.server = None
         self.active = None
         self.ip = self._get_network()
@@ -53,34 +54,28 @@ class HostDiscovery:
         self.server.listen()
 
     def connect(self, host):
-        establish_connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            establish_connection_socket.connect((host, self.PORT))
-            establish_connection_socket.send(self.HELLO.encode())
-            while True:
-                message = establish_connection_socket.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
-                if message == self.HELLO:
-                    port = establish_connection_socket.recv(16).encode(self.FORMAT)
-                    establish_connection_socket.close()
-                    peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    peer_socket.connect((host, int(port)))
-                    return peer_socket
-                elif message == self.REJECT:
-                    return False
-                else:
-                    continue
-        except:
-            return False
+        port = self.reserved_ports[-1] + 1
+        peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        peer.bind((str(self.ip), port))
+        peer.connect((host, self.PORT))
+        while True:
+            msg = peer.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
+            if msg == self.HELLO:
+                return peer
+            elif msg == self.REJECT:
+                print("[CONNECTION REJECTED]")
+                peer.close()
+                return False
+            else:
+                continue
+
 
     def accept(self, peer):
         while True:
             ans = input(f"Accept connection from {peer[1][0]} ? (y/n)")
             if ans == 'y' or ans == 'Y':
-                peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                peer_socket.bind((str(self.ip), peer[1][1]))
                 peer[0].send(self.HELLO.encode(self.FORMAT))
-                peer[0].send(str(peer[1][1]).encode(self.FORMAT))
-                return peer_socket
+                return peer[0]
             elif ans == 'n' or ans == 'N':
                 peer[0].send(self.REJECT.encode(self.FORMAT))
                 print(f"Connection with {peer} closed")
