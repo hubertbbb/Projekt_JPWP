@@ -60,11 +60,10 @@ class HostDiscovery:
             while True:
                 message = establish_connection_socket.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
                 if message == self.HELLO:
-                    address = establish_connection_socket.recv(16).encode(self.FORMAT)
                     port = establish_connection_socket.recv(16).encode(self.FORMAT)
                     establish_connection_socket.close()
                     peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    peer_socket.connect((address, int(port)))
+                    peer_socket.connect((host, int(port)))
                     return peer_socket
                 elif message == self.REJECT:
                     return False
@@ -76,12 +75,11 @@ class HostDiscovery:
     def accept(self, peer):
         while True:
             ans = input(f"Accept connection from {peer[1][0]} ? (y/n)")
-            if ans == 'y' and ans == 'Y':
+            if ans == 'y' or ans == 'Y':
                 peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                peer_socket.bind(self.ip, peer[1][1])
+                peer_socket.bind((str(self.ip), peer[1][1]))
                 peer[0].send(self.HELLO.encode(self.FORMAT))
-                peer[0].send(self.ip.encode(self.FORMAT))
-                peer[0].send(peer[1][1].encode(self.FORMAT))
+                peer[0].send(str(peer[1][1]).encode(self.FORMAT))
                 return peer_socket
             elif ans == 'n' or ans == 'N':
                 peer[0].send(self.REJECT.encode(self.FORMAT))
