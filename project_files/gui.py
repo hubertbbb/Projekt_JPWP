@@ -8,6 +8,7 @@ class Application(tk.Tk):
         self.hostDiscovery = hostDiscovery
         self.title("Catchy Title")
         self.createWidgets()
+        self.devices = []
 
     def createWidgets(self):
         topBar = tk.LabelFrame(self, text="topBar", width=1000, height=150)
@@ -34,16 +35,19 @@ class Application(tk.Tk):
     def scan(self, navBar):
         for widget in navBar.winfo_children():
             widget.destroy()
-        devices = self.hostDiscovery.scann_network()
+        self.devices = self.hostDiscovery.scann_network()
         deviceButtons = []
-        if len(devices) == 0:
+        if len(self.devices) == 0:
             navDefaultLabel = tk.Label(navBar, text="No devices found")
             navDefaultLabel.grid()
         else:
-            for device in devices:
+            for device in self.devices:
                 deviceButtons.append(tk.Button(navBar, text=device))
                 deviceButtons[-1].pack()
             return deviceButtons
+
+    def switchWidget(self):
+        pass
 
 hd = HostDiscovery()
 hd.activate()
