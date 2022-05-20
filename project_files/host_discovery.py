@@ -6,6 +6,10 @@ import ipaddress
 
 
 class HostDiscovery:
+    """
+    A Class to perform host discovery and establishing connections for data transmission
+    """
+
     PORT = 6000
     FORMAT = 'utf-8'
     HELLO = "11111"
@@ -14,71 +18,101 @@ class HostDiscovery:
 
     def __init__(self):
         self.reserved_ports = [self.PORT]
-        self.server = None
+        self.main = None
         self.active = None
-        self.ip = self.get_network()
+        self.ip = self.my_ip()
 
     @staticmethod
-    def get_network():
+    def my_ip():
+        """ Returns the IP address used to connect within LAN """
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         return ipaddress.ip_address(ip)
 
     def scann_network(self):
+        """ Scans network to find hosts running the same application """
+
         nm = nmap.PortScanner()
         nm.scan(hosts=str(ipaddress.ip_network(str(self.ip) + "/24", strict=False)),
                 arguments=f" -p {self.PORT} --open")
         hosts = [host for host in nm.all_hosts()]
+        # Remove your own IP address
         hosts.remove(str(self.ip))
         return hosts
 
     def stop(self):
-        self.server.close()
+        """ Closing the main socket """
+
+        # Not finished yet
+        self.main.close()
 
     def activate(self, app):
-        print(f"[READY FOR CONNECTIONS]")
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((str(self.ip), self.PORT))
-        self.active = True
-        self.server.listen()
-        return threading.Thread(target=self.handleConnections, args=[app])
+        """ Creates the main socket """
 
-    def handleConnections(self, app):
+        try:
+            self.main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.main.bind((str(self.ip), self.PORT))
+            self.active = True
+            self.main.listen()
+        except Exception as exc:
+            print(exc)
+            # Notify GUI class
+            return None
+        else:
+            print(f"[READY FOR CONNECTIONS]")
+            # Now the object is ready to get connection requests
+            return threading.Thread(target=self.handle_connections, args=[app])
+
+    def handle_connections(self, app):
+        """ Handles incoming connection request """
+
         while True:
-            # peer = (socket, (ip, port))
+            # Allow only valid connection requests
+            # peer is of type socket
             peer = self.get_peer()
-            # peer = socket
+            # Ask user whether he wants to accept connection
             peer = self.accept(peer, app)
             if peer:
-                # mozna wymienac dane:
+                # Now peer object can be used to data transmission
                 # peer.recv() / peer.send()
-
                 pass
             else:
+                # Connection was rejected
+                print("[CONNECTION REJECTED]")
                 continue
 
     def get_peer(self):
+        """ Listens for connection requests"""
+
         connected = True
         while connected:
-            conn, address = self.server.accept()
-            if address[0] == str(str(self.ip)):
+            # Get socket and address of device that wants to connect to us=
+            peer_socket, _ = self.main.accept()
+            peer_ip = peer_socket.getpeername()[0]
+            peer_port = peer_socket.getpeername()[1]
+            # Ignore connections made during host discovery process
+            if peer_ip == str(str(self.ip)):
                 continue
             try:
                 while True:
-                    message = conn.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
-                    # print(f"Message: {message}")
+                    # Check if it really is connection request
+                    message = peer_socket.recv(self.MESSAGE_LENGTH).decode(self.FORMAT)
                     if message == self.HELLO:
+                        # It is valid connection request
                         connected = False
-                        break
+                        print(f"[NEW CONNECTION REQUESTED] {peer_ip} on port {peer_port}")
+                        return peer_socket
                     else:
+                        # It is not valid connection request
                         continue
-            except:
+            except Exception as exc:
+                print(exc)
                 continue
-        print(f"[NEW CONNECTION REQUESTED] {address[0]} on port {address[1]}")
-        return conn, address
 
     def connect(self, host):
+        """ Request other device to establish connection """
+
         port = self.reserved_ports[-1] + 1
         self.reserved_ports.append(port)
         peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,23 +124,23 @@ class HostDiscovery:
             if msg == self.HELLO:
                 return peer
             elif msg == self.REJECT:
-                print("[CONNECTION REJECTED]")
                 peer.close()
                 return False
             else:
                 continue
 
     def accept(self, peer, app):
+        """ Accept or deny connection request """
         while True:
             response = app.accept(peer)
             if response:
-                peer[0].send(self.HELLO.encode(self.FORMAT))
+                peer.send(self.HELLO.encode(self.FORMAT))
                 print(peer)
-                return peer[0]
+                print(f"[CONNECTION ESTABLISHED] {peer}")
+                return peer
             else:
-                peer[0].send(self.REJECT.encode(self.FORMAT))
-                peer[0].close()
-                print(f"Connection with {peer} closed")
-                return False
-            # else:
-            #     continue
+                peer.send(self.REJECT.encode(self.FORMAT))
+                peer.close()
+                print(f"[CONNECTION CLOSED] {peer}")
+                return None
+

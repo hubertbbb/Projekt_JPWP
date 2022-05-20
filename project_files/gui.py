@@ -87,22 +87,22 @@ class Application(tk.Tk):
         pass
 
     def accept(self, peer):
-        host = peer[1][0]
-        response = messagebox.askyesno("Access request", f"Accept connection from {host} ?")
+        peer_ip = peer.getpeername()[0]
+        response = messagebox.askyesno("Access request", f"Accept connection from {peer_ip} ?")
         if response:
-            if host in map(lambda x: x.cget('text'), self.deviceButtons):
+            if peer_ip in map(lambda x: x.cget('text'), self.deviceButtons):
                 for deviceButton in self.deviceButtons:
-                    if deviceButton.cget('text') == host:
+                    if deviceButton.cget('text') == peer_ip:
                         deviceButton.config(background='#42f58d')
                         menu = tk.Menu(deviceButton, tearoff=0)
-                        menu.add_command(label="Disconnect", command=lambda: self.disconnect(device))
-                        menu.add_command(label="Show resources", command=lambda: self.show_resources(device))
+                        menu.add_command(label="Disconnect", command=lambda: self.disconnect(peer_ip))
+                        menu.add_command(label="Show resources", command=lambda: self.show_resources(peer_ip))
                         deviceButton['menu'] = menu
                     else:
                         continue
             else:
-                self.deviceButtons.append(tk.Button(self.navigationBar, text=host, background='#42f58d',
-                                                    command=lambda: self.hostDiscovery.connect(host)))
+                self.deviceButtons.append(tk.Button(self.navigationBar, text=peer_ip, background='#42f58d',
+                                                    command=lambda: self.peer_ipDiscovery.connect(peer_ip)))
                 self.deviceButtons[-1].pack()
 
         return response
