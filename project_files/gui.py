@@ -94,6 +94,10 @@ class Application(tk.Tk):
                 for deviceButton in self.deviceButtons:
                     if deviceButton.cget('text') == host:
                         deviceButton.config(background='#42f58d')
+                        menu = tk.Menu(deviceButton, tearoff=0)
+                        menu.add_command(label="Disconnect", command=lambda: self.disconnect(device))
+                        menu.add_command(label="Show resources", command=lambda: self.show_resources(device))
+                        deviceButton['menu'] = menu
                     else:
                         continue
             else:
