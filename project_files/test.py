@@ -14,3 +14,7 @@ while True:
         pass
     else:
         continue
+
+# Tutaj laczenie:
+# peer = hd.connect("111.111.111.111")
+# potem peer.recv() / peer.send()
