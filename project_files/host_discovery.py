@@ -30,6 +30,16 @@ class HostDiscovery:
         hosts.remove(str(self.ip))
         return hosts
 
+    def stop(self):
+        self.server.close()
+
+    def activate(self):
+        print(f"[READY FOR CONNECTIONS]")
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((str(self.ip), self.PORT))
+        self.active = True
+        self.server.listen()
+
     def get_peer(self):
         connected = True
         while connected:
@@ -49,16 +59,6 @@ class HostDiscovery:
                 continue
         print(f"[NEW CONNECTION REQUESTED] {address[0]} on port {address[1]}")
         return conn, address
-
-    def stop(self):
-        self.server.close()
-
-    def activate(self):
-        print(f"[READY FOR CONNECTIONS]")
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((str(self.ip), self.PORT))
-        self.active = True
-        self.server.listen()
 
     def connect(self, host):
         port = self.reserved_ports[-1] + 1
