@@ -26,13 +26,15 @@ class HostDiscovery:
         nm = nmap.PortScanner()
         nm.scan(hosts=str(ipaddress.ip_network(str(self.ip) + "/24", strict=False)),
                 arguments=f" -p {self.PORT} --open")
-        return [host for host in nm.all_hosts()]
+        hosts = [host for host in nm.all_hosts()]
+        hosts.remove(str(self.ip))
+        return hosts
 
     def get_peer(self):
         connected = True
         while connected:
             conn, address = self.server.accept()
-            if address[0] == str(self.ip):
+            if address[0] == str(str(self.ip)):
                 continue
             try:
                 while True:
@@ -76,20 +78,16 @@ class HostDiscovery:
             else:
                 continue
 
-
-    def accept(self, peer):
+    def accept(self, peer, app):
         while True:
-            ans = input(f"Accept connection from {peer[1][0]} ? (y/n) ")
-            if ans == 'y' or ans == 'Y':
+            response = app.accept(peer[1][0])
+            if response:
                 peer[0].send(self.HELLO.encode(self.FORMAT))
                 return peer[0]
-            elif ans == 'n' or ans == 'N':
+            else:
                 peer[0].send(self.REJECT.encode(self.FORMAT))
                 peer[0].close()
                 print(f"Connection with {peer} closed")
                 return False
-            else:
-                continue
-
-
-
+            # else:
+            #     continue

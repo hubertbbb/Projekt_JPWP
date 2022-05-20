@@ -1,5 +1,5 @@
 import tkinter as tk
-from host_discovery import HostDiscovery
+from tkinter import messagebox
 
 
 class Application(tk.Tk):
@@ -8,7 +8,7 @@ class Application(tk.Tk):
         self.hostDiscovery = hostDiscovery
         self.title("Catchy Title")
         self.createWidgets()
-        self.devices = []
+        deviceButtons = []
 
     def createWidgets(self):
         topBar = tk.LabelFrame(self, text="topBar", width=1000, height=150)
@@ -35,21 +35,21 @@ class Application(tk.Tk):
     def scan(self, navBar):
         for widget in navBar.winfo_children():
             widget.destroy()
-        self.devices = self.hostDiscovery.scann_network()
+        devices = self.hostDiscovery.scann_network()
         deviceButtons = []
-        if len(self.devices) == 0:
+        if len(devices) == 0:
             navDefaultLabel = tk.Label(navBar, text="No devices found")
             navDefaultLabel.grid()
         else:
-            for device in self.devices:
-                deviceButtons.append(tk.Button(navBar, text=device))
+            for device in devices:
+                deviceButtons.append(tk.Button(navBar, text=device,
+                                               command=lambda: self.hostDiscovery.connect(device)))
                 deviceButtons[-1].pack()
-            return deviceButtons
+
+    @staticmethod
+    def accept(peer):
+        response = messagebox.askyesno("Access request", f"Accept connection from {peer[1][0]} ?")
+        return response
 
     def switchWidget(self):
         pass
-
-hd = HostDiscovery()
-hd.activate()
-app = Application(hd)
-app.mainloop()
