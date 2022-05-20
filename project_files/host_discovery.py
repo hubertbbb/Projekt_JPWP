@@ -88,13 +88,17 @@ class HostDiscovery:
 
         connected = True
         while connected:
-            # Get socket and address of device that wants to connect to us=
+            # Get socket and address of device that wants to connect to us
             peer_socket, _ = self.main.accept()
-            peer_ip = peer_socket.getpeername()[0]
-            peer_port = peer_socket.getpeername()[1]
-            # Ignore connections made during host discovery process
-            if peer_ip == str(str(self.ip)):
+            try:
+                peer_ip = peer_socket.getpeername()[0]
+                peer_port = peer_socket.getpeername()[1]
+            except OSError:
+                # Ignore connections made during host discovery process
                 continue
+
+            # if peer_ip == str(str(self.ip)):
+                # continue
             try:
                 while True:
                     # Check if it really is connection request

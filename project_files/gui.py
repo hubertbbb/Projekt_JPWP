@@ -55,12 +55,13 @@ class Application(tk.Tk):
             navDefaultLabel = tk.Label(self.navigationBar, text="No devices found")
             navDefaultLabel.grid()
         else:
+            self.deviceButtons = []
             for device in devices:
-                menuButton = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
-                menu = tk.Menu(menuButton, tearoff=0)
+                deviceButton = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
+                menu = tk.Menu(deviceButton, tearoff=0)
                 menu.add_command(label="Connect", command=lambda: self.connect(device))
-                menuButton['menu'] = menu
-                self.deviceButtons.append(menuButton)
+                deviceButton['menu'] = menu
+                self.deviceButtons.append(deviceButton)
                 self.deviceButtons[-1].pack()
 
     def connect(self, device):
@@ -101,9 +102,16 @@ class Application(tk.Tk):
                     else:
                         continue
             else:
-                self.deviceButtons.append(tk.Button(self.navigationBar, text=peer_ip, background='#42f58d',
-                                                    command=lambda: self.peer_ipDiscovery.connect(peer_ip)))
+                deviceButton = tk.Menubutton(self.navigationBar, text=peer_ip, background='#42f58d')
+                menu = tk.Menu(deviceButton, tearoff=0)
+                menu.add_command(label="Disconnect", command=lambda: self.disconnect(peer_ip))
+                menu.add_command(label="Show resources", command=lambda: self.show_resources(peer_ip))
+                deviceButton['menu'] = menu
+                self.deviceButtons.append(deviceButton)
                 self.deviceButtons[-1].pack()
+                # self.deviceButtons.append(tk.Button(self.navigationBar, text=peer_ip, background='#42f58d',
+                #                                     command=lambda: self.hostDiscovery.connect(peer_ip)))
+                # self.deviceButtons[-1].pack()
 
         return response
 
