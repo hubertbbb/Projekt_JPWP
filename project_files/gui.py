@@ -1,14 +1,17 @@
 import tkinter as tk
 from tkinter import messagebox
+import threading
 
 
 class Application(tk.Tk):
     def __init__(self, hostDiscovery):
         super().__init__()
         self.hostDiscovery = hostDiscovery
-        self.title("Catchy Title")
+        self.hdThread = self.hostDiscovery.activate(self)
+        self.hdThread.start()
+        self.title("Title")
         self.createWidgets()
-        deviceButtons = []
+        self.deviceButtons = []
 
     def createWidgets(self):
         topBar = tk.LabelFrame(self, text="topBar", width=1000, height=150)

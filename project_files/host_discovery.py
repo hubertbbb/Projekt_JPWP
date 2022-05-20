@@ -1,3 +1,5 @@
+import threading
+
 import nmap
 import socket
 import ipaddress
@@ -33,12 +35,26 @@ class HostDiscovery:
     def stop(self):
         self.server.close()
 
-    def activate(self):
+    def activate(self, app):
         print(f"[READY FOR CONNECTIONS]")
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((str(self.ip), self.PORT))
         self.active = True
         self.server.listen()
+        return threading.Thread(target=self.handleConnections, args=[app])
+
+    def handleConnections(self, app):
+        while True:
+            # peer = (socket, (ip, port))
+            peer = self.get_peer()
+            # peer = socket
+            peer = self.accept(peer, app)
+            if peer:
+                # mozna wymienac dane:
+                # peer.recv() / peer.send()
+                pass
+            else:
+                continue
 
     def get_peer(self):
         connected = True
