@@ -16,9 +16,10 @@ class HostDiscovery:
         self.reserved_ports = [self.PORT]
         self.server = None
         self.active = None
-        self.ip = self._get_network()
+        self.ip = self.get_network()
 
-    def _get_network(self):
+    @staticmethod
+    def get_network():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
@@ -52,6 +53,7 @@ class HostDiscovery:
             if peer:
                 # mozna wymienac dane:
                 # peer.recv() / peer.send()
+
                 pass
             else:
                 continue
@@ -96,9 +98,10 @@ class HostDiscovery:
 
     def accept(self, peer, app):
         while True:
-            response = app.accept(peer[1][0])
+            response = app.accept(peer)
             if response:
                 peer[0].send(self.HELLO.encode(self.FORMAT))
+                print(peer)
                 return peer[0]
             else:
                 peer[0].send(self.REJECT.encode(self.FORMAT))
