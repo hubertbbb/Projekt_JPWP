@@ -25,6 +25,7 @@ class HostDiscovery:
     @staticmethod
     def my_ip():
         """ Returns the IP address used to connect within LAN """
+
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
@@ -110,6 +111,22 @@ class HostDiscovery:
                 print(exc)
                 continue
 
+    def accept(self, peer, app):
+        """ Accept or deny connection request """
+
+        while True:
+            response = app.accept(peer)
+            if response:
+                peer.send(self.HELLO.encode(self.FORMAT))
+                print(peer)
+                print(f"[CONNECTION ESTABLISHED] {peer}")
+                return peer
+            else:
+                peer.send(self.REJECT.encode(self.FORMAT))
+                peer.close()
+                print(f"[CONNECTION CLOSED] {peer}")
+                return None
+
     def connect(self, host):
         """ Request other device to establish connection """
 
@@ -128,19 +145,3 @@ class HostDiscovery:
                 return False
             else:
                 continue
-
-    def accept(self, peer, app):
-        """ Accept or deny connection request """
-        while True:
-            response = app.accept(peer)
-            if response:
-                peer.send(self.HELLO.encode(self.FORMAT))
-                print(peer)
-                print(f"[CONNECTION ESTABLISHED] {peer}")
-                return peer
-            else:
-                peer.send(self.REJECT.encode(self.FORMAT))
-                peer.close()
-                print(f"[CONNECTION CLOSED] {peer}")
-                return None
-
