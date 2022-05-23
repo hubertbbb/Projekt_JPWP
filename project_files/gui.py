@@ -82,7 +82,13 @@ class Application(tk.Tk):
             messagebox.showerror("Error", f"Connection with {device} refused")
 
     def disconnect(self, device):
-        pass
+        for deviceButton in self.deviceButtons:
+            if deviceButton.cget('text') == device:
+                # print(deviceButton.cget('menu'))
+                deviceButton.destroy()
+                self.hostDiscovery.disconnect(device)
+            else:
+                continue
 
     def show_resources(self, device):
         pass

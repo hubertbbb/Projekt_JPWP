@@ -18,6 +18,7 @@ class HostDiscovery:
 
     def __init__(self):
         self.reserved_ports = [self.PORT]
+        self.peers = []
         self.main = None
         self.active = None
         self.ip = self.my_ip()
@@ -75,6 +76,8 @@ class HostDiscovery:
             # Ask user whether he wants to accept connection
             peer = self.accept(peer, app)
             if peer:
+                # Track active sockets
+                self.peers.append(peer)
                 # Now peer object can be used to data transmission
                 # peer.recv() / peer.send()
                 pass
@@ -149,3 +152,9 @@ class HostDiscovery:
                 return False
             else:
                 continue
+
+    def disconnect(self, ip_addr):
+        for peer in self.peers:
+            if ip_addr == peer.getpeername[0]:
+                peer.close()
+                self.peers.remove(peer)
