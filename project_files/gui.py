@@ -13,6 +13,7 @@ class Application(tk.Tk):
             "Show Resources",
             "Disconnect"
         ]
+        self.downloads_folder = self.set_downloads_folder()
         self.hostBar = None
         self.myMachineBar = None
         self.topBar = None
@@ -48,8 +49,12 @@ class Application(tk.Tk):
         findDevicesButton = tk.Button(self.topBar, text="Find Devices", command=self.scan)
         findDevicesButton.grid()
 
-    def deviceActions(self):
-        pass
+    def set_downloads_folder(self):
+        """ Sets destination for files to be downloaded"""
+        downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
+        while not downloads_folder:
+            downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
+        return downloads_folder
 
     def scan(self):
         for widget in self.navigationBar.winfo_children():
@@ -91,34 +96,56 @@ class Application(tk.Tk):
         else:
             messagebox.showerror("Error", f"Connection with {device} refused")
 
-    def add_files(self, frame, is_peer_frame):
+    def get_files_from_frame(self, frame):
+        """ Returns list of filenames of given frame """
+        filenames = []
+        for widget in frame.winfo_children():
+            # In case we deal with my_host_frame
+            if isinstance(widget, tk.Checkbutton):
+                filenames.append(widget.cget('text'))
+            # In case we deal with peer_frame
+            elif isinstance(widget, tk.Label):
+                filenames.append(widget.cget('text'))
+            # Button widget
+            else:
+                continue
+        return filenames
+
+    def add_files_to_frame(self, frame, is_peer_frame):
         """ Adds files that will be shared with corresponding peer """
+        # These are files shared by peer
         if is_peer_frame:
             # Invoke method that will give files shared by peer
             filenames = []
-            checkbuttons = []
-            download_button = None
+            check_buttons = []
             for filename in filenames:
                 file_exists = False
+                # Check if a file is already in the checkbox
                 for widget in frame.winfo_children():
-                    # Check if a file is already in the checkbox
                     if isinstance(widget, tk.Checkbutton):
                         if widget.cget('text') == filename:
-                            print("File already reside in the checkbox")
+                            # File is already in checkbox
                             file_exists = True
                             break
                         else:
+                            # Check another one
                             continue
+                    # Temporarily remove 'Download' button
                     if isinstance(widget, tk.Button):
-                        download_button = widget
                         widget.destroy()
                 # No Checkbutton with matching filename found - create one:
                 if not file_exists:
-                    checkbuttons.append(tk.Menubutton(frame, text=filename))
-            for checkbutton in checkbuttons:
+                    check_buttons.append(tk.Menubutton(frame, text=filename))
+            # Add file checkboxes to frame
+            for checkbutton in check_buttons:
                 checkbutton.pack()
+            # Restore 'Download' button
+            download_files_method = partial(self.download_files, frame)
+            download_button = tk.Button(frame, text='Download files', command=download_files_method)
             download_button.pack()
+        # These are files that we want to share with peer
         else:
+            # Select file that we want to share with peer
             filename = filedialog.askopenfilename(title="Select a file",
                                                   filetypes=(("all files", "*"),
                                                              ("text files", "*.txt"),
@@ -128,18 +155,21 @@ class Application(tk.Tk):
                 return
             # Some file has been selected
             else:
-                add_button = None
+                # Check if a file is already in the checkbox
                 for widget in frame.winfo_children():
-                    # Check if a file is already in the checkbox
                     if isinstance(widget, tk.Label):
                         if widget.cget('text') == filename:
                             print("file already reside in the table")
                             return
-                        if isinstance(widget, tk.Button):
-                            add_button = widget
+                    # Temporarily remove 'Add files' button
+                    if isinstance(widget, tk.Button):
+                        widget.destroy()
                 # No Label with matching filename found - create one:
                 label = tk.Label(frame, text=filename)
                 label.pack()
+                # Restore 'Add files' button
+                add_files_method = partial(self.add_files_to_frame, frame, False)
+                add_button = tk.Button(frame, text='Add files', command=add_files_method)
                 add_button.pack()
                 # Checkbutton(frame, text=filename, command=lambda: download(filename)).pack()
 
@@ -151,7 +181,7 @@ class Application(tk.Tk):
         widgets = dict()
         my_host_frame = self.shared_resources_frames[peer]['my_host_frame']
         peer_frame = self.shared_resources_frames[peer]['peer_frame']
-        add_files_method = partial(self.add_files, my_host_frame, False)
+        add_files_method = partial(self.add_files_to_frame, my_host_frame, False)
         download_files_method = partial(self.download_files, peer_frame)
         add_button = tk.Button(my_host_frame, text='Add files', command=add_files_method)
         download_button = tk.Button(peer_frame, text='Download files', command=download_files_method)
