@@ -154,6 +154,7 @@ class HostDiscovery:
                 continue
 
     def disconnect(self, ip_addr):
+        """ Ends connection with socket of given IP address"""
         for peer in self.peers:
             if ip_addr == peer.getpeername[0]:
                 peer.close()
