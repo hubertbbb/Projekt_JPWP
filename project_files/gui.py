@@ -87,8 +87,12 @@ class Application(tk.Tk):
     def show_resources(self, device):
         for peer_resources in self.shared_resources.keys():
             if peer_resources == device:
+                self.myMachineBar.grid_remove()
                 self.myMachineBar = self.shared_resources[peer_resources]["my_host_frame"]
+                self.myMachineBar.grid(row=1, column=1)
+                self.hostBar.grid_remove()
                 self.hostBar = self.shared_resources[peer_resources]["peer_frame"]
+                self.hostBar.grid(row=1, column=2)
                 # self.hostBar.grid(row=1, column=2)
             else:
                 continue
