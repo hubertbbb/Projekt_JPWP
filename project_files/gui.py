@@ -19,10 +19,11 @@ class Application(tk.Tk):
         self.hdThread = self.hostDiscovery.activate(self)
         self.hdThread.start()
         self.title("Title")
-        self.createWidgets()
-        self.deviceButtons = []
+        self.create_widgets()
+        self.device_buttons = list()
+        self.shared_resources = dict()
 
-    def createWidgets(self):
+    def create_widgets(self):
         self.topBar = tk.LabelFrame(self, text="self.topBar", width=1000, height=150)
         self.navigationBar = tk.LabelFrame(self, text="navBar", width=200, height=500)
         self.myMachineBar = tk.LabelFrame(self, text="self.myMachineBar", width=400, height=500)
@@ -55,71 +56,85 @@ class Application(tk.Tk):
             navDefaultLabel = tk.Label(self.navigationBar, text="No devices found")
             navDefaultLabel.grid()
         else:
-            self.deviceButtons = []
+            self.device_buttons = []
             for device in devices:
-                deviceButton = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
-                menu = tk.Menu(deviceButton, tearoff=0)
+                device_button = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
+                menu = tk.Menu(device_button, tearoff=0)
                 menu.add_command(label="Connect", command=lambda: self.connect(device))
-                deviceButton['menu'] = menu
-                self.deviceButtons.append(deviceButton)
-                self.deviceButtons[-1].pack()
+                device_button['menu'] = menu
+                self.device_buttons.append(device_button)
+                self.device_buttons[-1].pack()
 
     def connect(self, device):
         peer = self.hostDiscovery.connect(device)
         if peer:
-            for deviceButton in self.deviceButtons:
-                if deviceButton.cget('text') == device:
-                    # print(deviceButton.cget('menu'))
-                    deviceButton.config(background='#42f58d')
-                    menu = tk.Menu(deviceButton, tearoff=0)
+            for device_button in self.device_buttons:
+                if device_button.cget('text') == device:
+                    # print(device_button.cget('menu'))
+                    device_button.config(background='#42f58d')
+                    menu = tk.Menu(device_button, tearoff=0)
                     menu.add_command(label="Disconnect", command=lambda: self.disconnect(device))
                     menu.add_command(label="Show resources", command=lambda: self.show_resources(device))
-                    deviceButton['menu'] = menu
-                    # print(deviceButton.winfo_children())
+                    device_button['menu'] = menu
+                    # Tracking shared resources
+                    self.shared_resources[device] = self.create_frames(device)
+                    # print(device_button.winfo_children())
                 else:
                     continue
         else:
             messagebox.showerror("Error", f"Connection with {device} refused")
 
+    def show_resources(self, device):
+        for peer_resources in self.shared_resources.keys():
+            if peer_resources == device:
+                self.myMachineBar = self.shared_resources[peer_resources]["my_host_frame"]
+                self.hostBar = self.shared_resources[peer_resources]["peer_frame"]
+                # self.hostBar.grid(row=1, column=2)
+            else:
+                continue
+
     def disconnect(self, device):
-        for deviceButton in self.deviceButtons:
-            if deviceButton.cget('text') == device:
-                # print(deviceButton.cget('menu'))
-                deviceButton.destroy()
+        for device_button in self.device_buttons:
+            if device_button.cget('text') == device:
+                device_button.destroy()
                 self.hostDiscovery.disconnect(device)
             else:
                 continue
 
-    def show_resources(self, device):
-        pass
+    def create_frames(self, device):
+        frames = dict()
+        my_host_frame = tk.LabelFrame(self, text=self.hostDiscovery.ip, width=400, height=500)
+        # my_host_frame.grid(row=1, column=1)
+        peer_frame = tk.LabelFrame(self, text=device, width=400, height=500)
+        # peer_frame.grid(row=1, column=2)
+        frames["my_host_frame"] = my_host_frame
+        frames["peer_frame"] = peer_frame
+        return frames
 
     def accept(self, peer):
         peer_ip = peer.getpeername()[0]
         response = messagebox.askyesno("Access request", f"Accept connection from {peer_ip} ?")
         if response:
-            if peer_ip in map(lambda x: x.cget('text'), self.deviceButtons):
-                for deviceButton in self.deviceButtons:
-                    if deviceButton.cget('text') == peer_ip:
-                        deviceButton.config(background='#42f58d')
-                        menu = tk.Menu(deviceButton, tearoff=0)
+            if peer_ip in map(lambda x: x.cget('text'), self.device_buttons):
+                for device_button in self.device_buttons:
+                    if device_button.cget('text') == peer_ip:
+                        device_button.config(background='#42f58d')
+                        menu = tk.Menu(device_button, tearoff=0)
                         menu.add_command(label="Disconnect", command=lambda: self.disconnect(peer_ip))
                         menu.add_command(label="Show resources", command=lambda: self.show_resources(peer_ip))
-                        deviceButton['menu'] = menu
+                        device_button['menu'] = menu
                     else:
                         continue
             else:
-                deviceButton = tk.Menubutton(self.navigationBar, text=peer_ip, background='#42f58d')
-                menu = tk.Menu(deviceButton, tearoff=0)
+                device_button = tk.Menubutton(self.navigationBar, text=peer_ip, background='#42f58d')
+                menu = tk.Menu(device_button, tearoff=0)
                 menu.add_command(label="Disconnect", command=lambda: self.disconnect(peer_ip))
                 menu.add_command(label="Show resources", command=lambda: self.show_resources(peer_ip))
-                deviceButton['menu'] = menu
-                self.deviceButtons.append(deviceButton)
-                self.deviceButtons[-1].pack()
-                # self.deviceButtons.append(tk.Button(self.navigationBar, text=peer_ip, background='#42f58d',
+                device_button['menu'] = menu
+                self.device_buttons.append(device_button)
+                self.device_buttons[-1].pack()
+                # self.device_buttons.append(tk.Button(self.navigationBar, text=peer_ip, background='#42f58d',
                 #                                     command=lambda: self.hostDiscovery.connect(peer_ip)))
-                # self.deviceButtons[-1].pack()
+                # self.device_buttons[-1].pack()
 
         return response
-
-    def switchWidget(self):
-        pass
