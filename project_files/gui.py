@@ -3,6 +3,7 @@ from tkinter import messagebox
 import threading
 from functools import partial
 
+
 class Application(tk.Tk):
     def __init__(self, hostDiscovery):
         super().__init__()
@@ -60,8 +61,8 @@ class Application(tk.Tk):
             for device in devices:
                 device_button = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
                 menu = tk.Menu(device_button, tearoff=0)
-                command = partial(self.connect, device)
-                menu.add_command(label="Connect", command=command)
+                connect_method = partial(self.connect, device)
+                menu.add_command(label="Connect", command=connect_method)
                 device_button['menu'] = menu
                 self.device_buttons.append(device_button)
                 self.device_buttons[-1].pack()
@@ -74,8 +75,10 @@ class Application(tk.Tk):
                     # print(device_button.cget('menu'))
                     device_button.config(background='#42f58d')
                     menu = tk.Menu(device_button, tearoff=0)
-                    menu.add_command(label="Disconnect", command=lambda: self.disconnect(device))
-                    menu.add_command(label="Show resources", command=lambda: self.show_resources(device))
+                    disconnect_method = partial(self.disconnect, device)
+                    show_resources_method = partial(self.show_resources, device)
+                    menu.add_command(label="Disconnect", command=disconnect_method)
+                    menu.add_command(label="Show resources", command=show_resources_method)
                     device_button['menu'] = menu
                     # Tracking shared resources
                     self.shared_resources[device] = self.create_frames(device)
@@ -85,23 +88,29 @@ class Application(tk.Tk):
         else:
             messagebox.showerror("Error", f"Connection with {device} refused")
 
-    def show_resources(self, device):
-        for peer_resources in self.shared_resources.keys():
-            if peer_resources == device:
-                self.myMachineBar.grid_remove()
-                self.myMachineBar = self.shared_resources[peer_resources]["my_host_frame"]
-                self.myMachineBar.grid(row=1, column=1)
-                self.hostBar.grid_remove()
-                self.hostBar = self.shared_resources[peer_resources]["peer_frame"]
-                self.hostBar.grid(row=1, column=2)
-                # self.hostBar.grid(row=1, column=2)
-            else:
-                continue
+    def show_resources(self, peer):
+        self.myMachineBar.grid_remove()
+        self.myMachineBar = self.shared_resources[peer]["my_host_frame"]
+        self.myMachineBar.grid(row=1, column=1)
+        self.hostBar.grid_remove()
+        self.hostBar = self.shared_resources[peer]["peer_frame"]
+        self.hostBar.grid(row=1, column=2)
 
     def disconnect(self, device):
+        self.myMachineBar.grid_remove()
+        self.hostBar.grid_remove()
+        self.myMachineBar = tk.LabelFrame(self, text="self.myMachineBar", width=400, height=500)
+        self.hostBar = tk.LabelFrame(self, text="self.hostBar", width=400, height=500)
+        self.myMachineBar.grid(row=1, column=1)
+        self.hostBar.grid(row=1, column=2)
+        self.myMachineBar.grid_propagate(False)
+        self.hostBar.grid_propagate(False)
+        self.shared_resources.pop(device)
+
         for device_button in self.device_buttons:
             if device_button.cget('text') == device:
                 device_button.destroy()
+                self.device_buttons.remove(device_button)
                 self.hostDiscovery.disconnect(device)
             else:
                 continue
