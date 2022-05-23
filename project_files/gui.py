@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import threading
-
+from functools import partial
 
 class Application(tk.Tk):
     def __init__(self, hostDiscovery):
@@ -60,7 +60,8 @@ class Application(tk.Tk):
             for device in devices:
                 device_button = tk.Menubutton(self.navigationBar, text=device, background='#f55442')
                 menu = tk.Menu(device_button, tearoff=0)
-                menu.add_command(label="Connect", command=lambda: self.connect(device))
+                command = partial(self.connect, device)
+                menu.add_command(label="Connect", command=command)
                 device_button['menu'] = menu
                 self.device_buttons.append(device_button)
                 self.device_buttons[-1].pack()
