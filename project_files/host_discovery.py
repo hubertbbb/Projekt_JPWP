@@ -32,7 +32,7 @@ class HostDiscovery:
         ip = s.getsockname()[0]
         return ipaddress.ip_address(ip)
 
-    def scann_network(self):
+    def scan_network(self):
         """ Scans network to find hosts running the same application """
 
         nm = nmap.PortScanner()
