@@ -50,7 +50,7 @@ class Application(tk.Tk):
         findDevicesButton.grid()
 
     def set_downloads_folder(self):
-        """ Sets destination for files to be downloaded"""
+        """ Sets destination folder for files to be downloaded """
         downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
         while not downloads_folder:
             downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
