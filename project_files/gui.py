@@ -44,6 +44,8 @@ class Application(tk.Tk):
         self.shared_resources_widgets = dict()
 
     def create_widgets(self):
+        """ Creates all necessary widgets"""
+
         self.top_frame = tk.LabelFrame(self, text="self.top_frame", width=1000, height=150)
         self.devices_frame = tk.LabelFrame(self, text="navBar", width=200, height=500)
         self.my_device_frame = tk.LabelFrame(self, text="self.my_device_frame", width=400, height=500)
@@ -67,6 +69,7 @@ class Application(tk.Tk):
 
     def set_downloads_folder(self):
         """ Sets destination folder for files to be downloaded """
+
         downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
         # Check if folder was selected
         while not downloads_folder:
@@ -75,6 +78,7 @@ class Application(tk.Tk):
 
     def scan(self):
         """ Scans network and puts founded devices into devices_frame """
+
         # Remove widgets in devices_frame
         for widget in self.devices_frame.winfo_children():
             widget.destroy()
@@ -101,6 +105,7 @@ class Application(tk.Tk):
 
     def connect(self, peer_ip):
         """ Establishes connection with given peer"""
+
         peer_socket = self.host_discovery.connect(peer_ip)
         # Connection successful, peer_socket was assigned value
         if peer_socket:
@@ -128,6 +133,7 @@ class Application(tk.Tk):
 
     def get_files_from_frame(self, frame):
         """ Returns list of filenames of given frame """
+
         filenames = []
         for widget in frame.winfo_children():
             # In case we deal with my_device_frame with Labels
@@ -213,16 +219,25 @@ class Application(tk.Tk):
 
     def download_files(self, frame):
         """ Downloads files from peer """
+
         pass
 
     def create_resource_widgets(self, peer):
-        """ Adds 'add files' button to my_device_frame and 'download' button to peer_frame"""
+        """
+        Create Dictionary storing resource frames associated with give IP address
+
+        This method adds 'Add files' button to my_device_frame and 'Download' button to peer_frame
+        It is used by connect method.
+        """
+
         widgets = dict()
         my_device_frame = self.shared_resources_frames[peer]['my_device_frame']
         peer_frame = self.shared_resources_frames[peer]['peer_frame']
         add_files_method = partial(self.add_files_to_frame, my_device_frame, False)
         download_files_method = partial(self.download_files, peer_frame)
+        # My part of resources
         add_button = tk.Button(my_device_frame, text='Add files', command=add_files_method)
+        # Peer's part of resources
         download_button = tk.Button(peer_frame, text='Download files', command=download_files_method)
         add_button.pack()
         download_button.pack()
@@ -243,6 +258,7 @@ class Application(tk.Tk):
             "peer_frame": frame-widget,
         }}
         """
+
         # Replace currently displayed 'my_device_frame'
         self.my_device_frame.grid_remove()
         self.my_device_frame = self.shared_resources_frames[peer_ip]["my_device_frame"]
@@ -264,6 +280,7 @@ class Application(tk.Tk):
             "peer_frame": frame-widget,
         }}
         """
+
         # Remove frames
         self.my_device_frame.grid_remove()
         self.peer_frame.grid_remove()
@@ -289,6 +306,7 @@ class Application(tk.Tk):
 
     def create_frames(self, peer_ip):
         """ Create new resource frames """
+
         frames = dict()
         my_device_frame = tk.LabelFrame(self, text=self.host_discovery.ip, width=400, height=500)
         peer_frame = tk.LabelFrame(self, text=peer_ip, width=400, height=500)
@@ -298,6 +316,7 @@ class Application(tk.Tk):
 
     def accept(self, peer):
         """ Ask user whether he wants to establish connection with peer of given ip address"""
+
         peer_ip = peer.getpeername()[0]
         response = messagebox.askyesno("Access request", f"Accept connection from {peer_ip} ?")
         if response:
