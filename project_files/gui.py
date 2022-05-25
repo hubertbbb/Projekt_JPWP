@@ -68,24 +68,32 @@ class Application(tk.Tk):
     def set_downloads_folder(self):
         """ Sets destination for files to be downloaded"""
         downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
+        # Check if folder was selected
         while not downloads_folder:
             downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
         return downloads_folder
 
     def scan(self):
-        """ Scans network and puts founded devices into devices_frame"""
+        """ Scans network and puts founded devices into devices_frame """
+        # Remove widgets in devices_frame
         for widget in self.devices_frame.winfo_children():
             widget.destroy()
-        devices = self.host_discovery.scan_network()
-        if len(devices) == 0:
+        # Get list of peers ready to establish connection
+        peer_list = self.host_discovery.scan_network()
+        if len(peer_list) == 0:
+            # No devices found - put the default label
             devices_default_label = tk.Label(self.devices_frame, text="No devices found")
             devices_default_label.grid()
         else:
+            # Tracking Menubuttons
             self.peer_menu_buttons = []
-            for device in devices:
-                device_button = tk.Menubutton(self.devices_frame, text=device, background='#f55442')
+            # For each peer create Menubutton and put them into devices_frame
+            for peer in peer_list:
+                # Red color = Connection with peer not established yet
+                device_button = tk.Menubutton(self.devices_frame, text=peer, background='#f55442')
                 menu = tk.Menu(device_button, tearoff=0)
-                connect_method = partial(self.connect, device)
+                connect_method = partial(self.connect, peer)
+                # Add 'Connect' option
                 menu.add_command(label="Connect", command=connect_method)
                 device_button['menu'] = menu
                 self.peer_menu_buttons.append(device_button)
@@ -293,6 +301,8 @@ class Application(tk.Tk):
         peer_ip = peer.getpeername()[0]
         response = messagebox.askyesno("Access request", f"Accept connection from {peer_ip} ?")
         if response:
+            # Check if peer already resides in devices_frame
+            # If so - change it's color to green and add 'Disconnect' and 'Show resources' option
             if peer_ip in map(lambda x: x.cget('text'), self.peer_menu_buttons):
                 for device_button in self.peer_menu_buttons:
                     if device_button.cget('text') == peer_ip:
@@ -303,12 +313,14 @@ class Application(tk.Tk):
                         device_button['menu'] = menu
                     else:
                         continue
+            # Peer not present in devices_frame - create new Menubutton
             else:
                 device_button = tk.Menubutton(self.devices_frame, text=peer_ip, background='#42f58d')
                 menu = tk.Menu(device_button, tearoff=0)
                 menu.add_command(label="Disconnect", command=lambda: self.disconnect(peer_ip))
                 menu.add_command(label="Show resources", command=lambda: self.show_resources(peer_ip))
                 device_button['menu'] = menu
+                # Track new Menubutton
                 self.peer_menu_buttons.append(device_button)
                 self.peer_menu_buttons[-1].pack()
         return response
