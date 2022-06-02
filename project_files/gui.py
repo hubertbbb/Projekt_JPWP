@@ -3,6 +3,7 @@ from tkinter import messagebox
 import threading
 from functools import partial
 from tkinter import filedialog
+from qr_share import local_share
 
 
 class Application(tk.Tk):
@@ -42,6 +43,9 @@ class Application(tk.Tk):
         }}
         """
         self.shared_resources_widgets = dict()
+        
+        local_share_button = tk.Button( text="Share files locally", command=lambda : local_share())
+        local_share_button.grid()
 
     def create_widgets(self):
         """ Creates all necessary widgets"""
