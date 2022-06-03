@@ -13,7 +13,7 @@ def local_share():
     # assigning the appropriate port value
     PORT = 8010
 
-    directory = filedialog.askdirectory(title="Select a file")
+    directory = filedialog.askdirectory(title="Wybierz folder do udostępnienia")
 
     # changing the directory to access the files desktop
     # with the help of os module
