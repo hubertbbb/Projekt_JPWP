@@ -14,10 +14,10 @@ W odpowiednim miejscu wygenerować Kod QR z zmiennej IP, zapisanie do formatu sv
 oraz otwarcie zapisanego obrazu w przeglądarce
 
 ## Zadanie 3
-Korzystając z modułu python-nmap przeskanuj dostępne porty tcp od 1 do 100 hosta o adresie 70.34.255.175, a następnie wyświetl ich stan
+Korzystając z modułu python-nmap przeskanuj dostępne porty TCP od 1 do 100 hosta o adresie 70.34.255.175, a następnie wyświetl ich stan
 
-Podpowiedź: Zobacz co zawiera struktura zwracana przez metode scan()
+Podpowiedź: Zobacz co zawiera struktura zwracana przez metodę scan()
 
 ## Zadanie 4
-Wykorzystując gniazdo tcp wyślij zdanie nieprzekraczające 1024 znaków do hosta 70.34.255.175, korzystającego z portu 30000.
+Wykorzystując gniazdo TCP wyślij zdanie nieprzekraczające 1024 znaków do hosta 70.34.255.175, korzystającego z portu 30000.
 W odpowiedzi powinieneś otrzymać identyczną wiadomość z zamienioną wielkością liter.
