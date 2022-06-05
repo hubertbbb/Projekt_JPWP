@@ -19,5 +19,5 @@ Korzystając z modułu python-nmap przeskanuj dostępne porty tcp od 1 do 100 ho
 Podpowiedź: Zobacz co zawiera struktura zwracana przez metode scan()
 
 ## Zadanie 4
-Wykorzystując gniazda tcp wyślij zdanie nieprzekraczające 1024 znaków do hosta 70.34.255.175, korzystającego z portu 30000.
+Wykorzystując gniazdo tcp wyślij zdanie nieprzekraczające 1024 znaków do hosta 70.34.255.175, korzystającego z portu 30000.
 W odpowiedzi powinieneś otrzymać identyczną wiadomość z zamienioną wielkością liter.
