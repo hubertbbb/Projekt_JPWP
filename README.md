@@ -1,4 +1,5 @@
 # Zadania
+Treść zadań znajdziesz w plikach zadanieX.py
 ## Zadanie 1
 Należy odczytać treść z pliku message.txt i przy użyciu
 poniższego klucza odszyfrować wiadomość
@@ -10,4 +11,4 @@ Podpowiedź: Zawartość pliku message.txt należy przekonwertować do formatu b
 W odpowiednim miejscu wygenerować Kod QR z zmiennej IP, zapisanie do formatu svg
 oraz otwarcie zapisanego obrazu w przeglądarce
 
-
+## Zadanie 3
