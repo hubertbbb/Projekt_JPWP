@@ -3,6 +3,7 @@ import threading
 import nmap
 import socket
 import ipaddress
+from server import receive_files
 
 
 class HostDiscovery:
@@ -80,6 +81,8 @@ class HostDiscovery:
                 self.peers.append(peer)
                 # Now peer object can be used to data transmission
                 # peer.recv() / peer.send()
+                #Ready to receive files
+                receive_files(self.ip)
                 pass
             else:
                 # Connection was rejected
