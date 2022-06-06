@@ -25,53 +25,44 @@ class Application(tk.Tk):
         self.hdThread.start()
         self.title("Title")
         self.create_widgets()
-        self.peer_ip = ""
 
         # Elements to track
         self.peer_menu_buttons = list()
         """
-        Structure of elements in self.shared_resource_frames:
-        {"ip of peer": {
-            "my_device_frame": Frame widget,
-            "peer_frame": Frame widget
-        }}
+        Structure of elements in self.shared_files:
+        {
+            "ip of peer": [filenames]
+        }
         """
-        self.shared_resources_frames = dict()
-        """
-        Structure of elements in self.shared_resource_widgets:
-        {"ip of peer": {
-            "my_device_frame": [list of Label widgets],
-            "peer_frame": [list of Checkbutton widgets]
-        }}
-        """
-        self.shared_resources_widgets = dict()
-
-        local_share_button = tk.Button(text="Share files locally", command=lambda: local_share())
-        local_share_button.grid()
+        self.shared_files = dict()
 
     def create_widgets(self):
         """ Creates all necessary widgets"""
 
-        self.top_frame = tk.LabelFrame(self, width=1000, height=150)
         self.devices_frame = tk.LabelFrame(self, text="Devices", width=200, height=500)
-        self.my_device_frame = tk.LabelFrame(self, text="my_device_frame", width=400, height=500)
-        self.peer_frame = tk.LabelFrame(self, text="peer_frame", width=400, height=500)
+        self.my_device_frame = tk.LabelFrame(self, text="my_device_frame", width=800, height=500)
 
-        self.top_frame.grid(row=0, column=0, columnspan=3, sticky="ew")
         self.devices_frame.grid(row=1, column=0)
-        self.my_device_frame.grid(row=1, column=1)
-        self.peer_frame.grid(row=1, column=2)
+        self.my_device_frame.grid(row=1, column=1, columnspan=3)
 
-        self.top_frame.grid_propagate(False)
         self.devices_frame.grid_propagate(False)
         self.my_device_frame.grid_propagate(False)
-        self.peer_frame.grid_propagate(False)
+
+        find_devices_button = tk.Button(self, text="Find Devices", command=self.scan)
+        find_devices_button.grid(row=2, column=0)
+
+        local_share_button = tk.Button(self, text="Share files locally", command=lambda: local_share())
+        local_share_button.grid(row=2, column=1)
+
+        add_button = tk.Button(self, text='Add files', command=self.add_files_to_frame)
+        add_button.grid(row=2, column=2)
+
+        send_button = tk.Button(self, text='Send files', command=self.send_selected_files)
+        send_button.grid(row=2, column=3)
 
         devices_default_label = tk.Label(self.devices_frame, text="No devices found")
         devices_default_label.grid()
 
-        find_devices_button = tk.Button(self.top_frame, text="Find Devices", command=self.scan)
-        find_devices_button.grid()
 
     def set_downloads_folder(self):
         """ Sets destination folder for files to be downloaded """
@@ -95,8 +86,6 @@ class Application(tk.Tk):
             devices_default_label = tk.Label(self.devices_frame, text="No devices found")
             devices_default_label.grid()
         else:
-            # Tracking Menubuttons
-            self.peer_menu_buttons = []
             # For each peer create Menubutton and put them into devices_frame
             for peer in peer_list:
                 # Red color = Connection with peer not established yet
@@ -106,8 +95,7 @@ class Application(tk.Tk):
                 # Add 'Connect' option
                 menu.add_command(label="Connect", command=connect_method)
                 device_button['menu'] = menu
-                self.peer_menu_buttons.append(device_button)
-                self.peer_menu_buttons[-1].grid()
+                device_button.grid()
 
     def connect(self, peer_ip):
         """ Establishes connection with given peer"""
@@ -115,220 +103,75 @@ class Application(tk.Tk):
         peer_socket = self.host_discovery.connect(peer_ip)
         # Connection successful, peer_socket was assigned value
         if peer_socket:
-            for peer_menu_button in self.peer_menu_buttons:
-                if peer_menu_button.cget('text') == peer_ip:
+            for menu_button in self.devices_frame.winfo_children():
+                if menu_button.cget('text') == peer_ip:
                     # Change peer's Menubutton color to green
-                    peer_menu_button.config(background='#42f58d')
+                    menu_button.config(background='#42f58d')
+                    menu = tk.Menu(menu_button, tearoff=0)
                     # Create new menu with 'Disconnect' and 'Show resources' commands
-                    menu = tk.Menu(peer_menu_button, tearoff=0)
                     disconnect_method = partial(self.disconnect, peer_ip)
                     show_resources_method = partial(self.show_resources, peer_ip)
                     menu.add_command(label="Disconnect", command=disconnect_method)
                     menu.add_command(label="Show resources", command=show_resources_method)
-                    self.peer_ip = peer_ip
                     # Replace 'Connect' command with 'Disconnect' and 'Show resources'
-                    peer_menu_button['menu'] = menu
-                    # Tracking shared resources frames
-                    self.shared_resources_frames[peer_ip] = self.create_frames(peer_ip)
-                    # Tracking shared resources widgets containing filenames
-                    self.shared_resources_widgets[peer_ip] = self.create_resource_widgets(peer_ip)
-                else:
-                    continue
-        # Connection failed, peer_socket is None
+                    menu_button['menu'] = menu
         else:
             messagebox.showerror("Error", f"Connection with {peer_ip} refused")
 
-    def get_files_from_frame(self, frame):
-        """ Returns list of filenames of given frame """
-
-        filenames = []
-        for widget in frame.winfo_children():
-            # In case we deal with my_device_frame with Labels
-            if isinstance(widget, tk.Checkbutton):
-                filenames.append(widget.cget('text'))
-            # In case we deal with peer_frame with Checkbuttons
-            elif isinstance(widget, tk.Label):
-                filenames.append(widget.cget('text'))
-            # Button widget
-            else:
-                continue
-        return filenames
-
-    def add_files_to_frame(self, frame, is_peer_frame):
-        """
-        Adds files that will be shared with corresponding peer
-
-        Depending on the is_peer_flag, this method will modify either
-        my_device_frame or peer_frame. The distinction is important because
-        my_device_frame have to invoke file dialog to add filenames into Labels,
-        while peer_frame have to receive filenames from peer and put them into
-        Checkbuttons.
-        """
-        # These are files shared by peer
-        if is_peer_frame:
-            # Invoke method that will get names of file shared by peer
-            filenames = []
-            # Checkbuttons will store filenames
-            check_buttons = []
-            for filename in filenames:
-                file_exists = False
-                # Check if a file is already in the checkbox
-                for widget in frame.winfo_children():
-                    if isinstance(widget, tk.Checkbutton):
-                        if widget.cget('text') == filename:
-                            # File is already in checkbox
-                            file_exists = True
-                            break
-                        else:
-                            # Check another one
-                            continue
-                    # Temporarily remove 'Download' button
-                    if isinstance(widget, tk.Button):
-                        widget.destroy()
-                # No Checkbutton with matching filename found - create one
-                if not file_exists:
-                    check_buttons.append(tk.Menubutton(frame, text=filename))
-            # Add file Checkbuttons to peer_frame
-            for checkbutton in check_buttons:
-                checkbutton.grid()
-            # Restore 'Download' button
-            download_files_method = partial(self.download_files, frame)
-            download_button = tk.Button(frame, text='Download files', command=download_files_method)
-            download_button.grid()
-        # These are files that we want to share with particular peer
+    def add_files_to_frame(self):
+        # Select file that we want to share
+        peer_ip = self.my_device_frame.cget('text')
+        filename = filedialog.askopenfilename(title="Select a file",
+                                              filetypes=(("all files", "*"),
+                                                         ("text files", "*.txt"),
+                                                         ))
+        # No file has been selected
+        if not filename:
+            return
+        # Some file has been selected
         else:
-            # Select file that we want to share
-            filename = filedialog.askopenfilename(title="Select a file",
-                                                  filetypes=(("all files", "*"),
-                                                             ("text files", "*.txt"),
-                                                             ))
-            # No file has been selected
-            if not filename:
+            # Check if a file is already in the Label
+            if filename in self.shared_files[peer_ip]:
+                print("file already reside in the table")
                 return
-            # Some file has been selected
             else:
-                # Check if a file is already in the Label
-                for widget in frame.winfo_children():
-                    if isinstance(widget, tk.Label):
-                        if widget.cget('text') == filename:
-                            print("file already reside in the table")
-                            return
-                    # Temporarily remove 'Add files' button
-                    if isinstance(widget, tk.Button):
-                        widget.destroy()
-                # No Label with matching filename found - create one
-                label = tk.Label(frame, text=filename)
-                label.grid()
-                # Restore 'Add files' button
-                add_files_method = partial(self.add_files_to_frame, frame, False)
-                add_button = tk.Button(frame, text='Add files', command=add_files_method)
-                add_button.grid()
-                send_button_method = partial(self.send_selected_files, filename)
-                send_button = tk.Button(frame, text='Send files', command=send_button_method)
-                send_button.grid()
+                self.shared_files[peer_ip].append(filename)
+                tk.Label(self.my_device_frame, text=filename).grid()
 
-    def send_selected_files(self, file):
+    def send_selected_files(self):
+        peer_ip = self.my_device_frame.cget('text')
         print("Sending files...")
         # print(self.peer_ip)
-        send_file(self.peer_ip, file)
-
-    def download_files(self, frame):
-        """ Downloads files from peer """
-
-        pass
-
-    def create_frames(self, peer_ip):
-        """ Create new resource frames """
-
-        frames = dict()
-        my_device_frame = tk.LabelFrame(self, text=self.host_discovery.ip, width=400, height=500)
-        peer_frame = tk.LabelFrame(self, text=peer_ip, width=400, height=500)
-        frames["my_device_frame"] = my_device_frame
-        frames["peer_frame"] = peer_frame
-        return frames
-
-    def create_resource_widgets(self, peer):
-        """
-        Create Dictionary storing resource frames associated with give IP address
-
-        This method adds 'Add files' button to my_device_frame and 'Download' button to peer_frame
-        It is used by connect method.
-        """
-
-        widgets = dict()
-        my_device_frame = self.shared_resources_frames[peer]['my_device_frame']
-        peer_frame = self.shared_resources_frames[peer]['peer_frame']
-        add_files_method = partial(self.add_files_to_frame, my_device_frame, False)
-        download_files_method = partial(self.download_files, peer_frame)
-        # My part of resources
-        add_button = tk.Button(my_device_frame, text='Add files', command=add_files_method)
-
-        # Peer's part of resources
-        download_button = tk.Button(peer_frame, text='Download files', command=download_files_method)
-        add_button.grid()
-        download_button.grid()
-        widgets['my_host_widgets'] = [add_button]
-        widgets['peer_widgets'] = [download_button]
-        return widgets
+        for file in self.shared_files[peer_ip]:
+            send_file(peer_ip, file)
 
     def show_resources(self, peer_ip):
-        """
-        This command is added to Menubutton when connection with peer is established
+        self.my_device_frame.config(text=peer_ip)
+        for widget in self.my_device_frame.winfo_children():
+            widget.destroy()
 
-        It simply finds my_device_frame and peer_frame associated with given peer_ip in
-        self.shared_resources_frames dictionary and puts them into main window.
-
-        Structure of elements in self.shared_resource_frames:
-        {"ip of peer": {
-            "my_device_frame": frame-widget,
-            "peer_frame": frame-widget,
-        }}
-        """
-
-        # Replace currently displayed 'my_device_frame'
-        self.my_device_frame.grid_remove()
-        self.my_device_frame = self.shared_resources_frames[peer_ip]["my_device_frame"]
-        self.my_device_frame.grid(row=1, column=1)
-        # Replace currently displayed 'peer_frame'
-        self.peer_frame.grid_remove()
-        self.peer_frame = self.shared_resources_frames[peer_ip]["peer_frame"]
-        self.peer_frame.grid(row=1, column=2)
+        if peer_ip in self.shared_files:
+            for file in self.shared_files[peer_ip]:
+                tk.Label(self.my_device_frame, text=file).grid()
+        else:
+            self.shared_files[peer_ip] = list()
 
     def disconnect(self, peer_ip):
         """
         This command is added to Menubutton when connection with peer is established
 
         It removes all widgets associated with given peer_ip
-
-        Structure of elements in self.shared_resource_frames:
-        {"ip of peer": {
-            "my_device_frame": frame-widget,
-            "peer_frame": frame-widget,
-        }}
         """
+        self.my_device_frame.config(text="No device selected")
+        for widget in self.my_device_frame.winfo_children():
+            widget.destroy()
 
-        # Remove frames
-        self.my_device_frame.grid_remove()
-        self.peer_frame.grid_remove()
-        # Don't need to track frames anymore
-        self.shared_resources_frames.pop(peer_ip)
-        # Put 'default' frames into main window
-        self.my_device_frame = tk.LabelFrame(self, text="self.my_device_frame", width=400, height=500)
-        self.peer_frame = tk.LabelFrame(self, text="self.peer_frame", width=400, height=500)
-        self.my_device_frame.grid(row=1, column=1)
-        self.peer_frame.grid(row=1, column=2)
-        self.my_device_frame.grid_propagate(False)
-        self.peer_frame.grid_propagate(False)
+        for widget in self.devices_frame.winfo_children():
+            if widget.cget('text') == peer_ip:
+                widget.destroy()
 
-        for device_button in self.peer_menu_buttons:
-            if device_button.cget('text') == peer_ip:
-                # Remove Menubutton with peer_ip
-                device_button.destroy()
-                self.peer_menu_buttons.remove(device_button)
-                # Let the peer know about end of connection
-                self.host_discovery.disconnect(peer_ip)
-            else:
-                continue
+        del self.shared_files[peer_ip]
+
 
     def accept(self, peer):
         """ Ask user whether he wants to establish connection with peer of given ip address"""
