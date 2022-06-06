@@ -6,7 +6,6 @@ from tkinter import filedialog
 from qr_share import local_share
 from client import send_file
 
-
 class Application(tk.Tk):
     def __init__(self, host_discovery):
         super().__init__()
@@ -15,7 +14,6 @@ class Application(tk.Tk):
             "Show Resources",
             "Disconnect"
         ]
-        self.downloads_folder = self.set_downloads_folder()
         self.peer_frame = None
         self.my_device_frame = None
         self.top_frame = None
@@ -62,16 +60,6 @@ class Application(tk.Tk):
 
         devices_default_label = tk.Label(self.devices_frame, text="No devices found")
         devices_default_label.grid()
-
-
-    def set_downloads_folder(self):
-        """ Sets destination folder for files to be downloaded """
-
-        downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
-        # Check if folder was selected
-        while not downloads_folder:
-            downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
-        return downloads_folder
 
     def scan(self):
         """ Scans network and puts founded devices into devices_frame """
@@ -131,12 +119,15 @@ class Application(tk.Tk):
         # Some file has been selected
         else:
             # Check if a file is already in the Label
-            if filename in self.shared_files[peer_ip]:
-                print("file already reside in the table")
-                return
+            if peer_ip in self.shared_files:
+                if filename in self.shared_files[peer_ip]:
+                    print("file already reside in the table")
+                    return
+                else:
+                    self.shared_files[peer_ip].append(filename)
+                    tk.Label(self.my_device_frame, text=filename).grid()
             else:
-                self.shared_files[peer_ip].append(filename)
-                tk.Label(self.my_device_frame, text=filename).grid()
+                self.shared_files[peer_ip] = list()
 
     def send_selected_files(self):
         peer_ip = self.my_device_frame.cget('text')
@@ -171,7 +162,6 @@ class Application(tk.Tk):
                 widget.destroy()
 
         del self.shared_files[peer_ip]
-
 
     def accept(self, peer):
         """ Ask user whether he wants to establish connection with peer of given ip address"""

@@ -1,9 +1,15 @@
 import socket
 import tqdm
 import os
+from tkinter import filedialog
 
 
 def receive_files(ip_address):
+    downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
+    # Check if folder was selected
+    while not downloads_folder:
+        downloads_folder = filedialog.askdirectory(title="Choose directory for downloaded files")
+    os.chdir(downloads_folder)
     print("Your IP address" + str(ip_address))
     # device's IP address
     SERVER_HOST = str(ip_address)
