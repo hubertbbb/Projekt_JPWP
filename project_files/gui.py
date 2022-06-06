@@ -45,18 +45,17 @@ class Application(tk.Tk):
         }}
         """
         self.shared_resources_widgets = dict()
-        
-        local_share_button = tk.Button( text="Share files locally", command=lambda : local_share())
-        local_share_button.grid()
 
+        local_share_button = tk.Button(text="Share files locally", command=lambda: local_share())
+        local_share_button.grid()
 
     def create_widgets(self):
         """ Creates all necessary widgets"""
 
-        self.top_frame = tk.LabelFrame(self, text="self.top_frame", width=1000, height=150)
-        self.devices_frame = tk.LabelFrame(self, text="navBar", width=200, height=500)
-        self.my_device_frame = tk.LabelFrame(self, text="self.my_device_frame", width=400, height=500)
-        self.peer_frame = tk.LabelFrame(self, text="self.peer_frame", width=400, height=500)
+        self.top_frame = tk.LabelFrame(self, width=1000, height=150)
+        self.devices_frame = tk.LabelFrame(self, text="Devices", width=200, height=500)
+        self.my_device_frame = tk.LabelFrame(self, text="my_device_frame", width=400, height=500)
+        self.peer_frame = tk.LabelFrame(self, text="peer_frame", width=400, height=500)
 
         self.top_frame.grid(row=0, column=0, columnspan=3, sticky="ew")
         self.devices_frame.grid(row=1, column=0)
@@ -73,7 +72,6 @@ class Application(tk.Tk):
 
         find_devices_button = tk.Button(self.top_frame, text="Find Devices", command=self.scan)
         find_devices_button.grid()
-        
 
     def set_downloads_folder(self):
         """ Sets destination folder for files to be downloaded """
@@ -109,7 +107,7 @@ class Application(tk.Tk):
                 menu.add_command(label="Connect", command=connect_method)
                 device_button['menu'] = menu
                 self.peer_menu_buttons.append(device_button)
-                self.peer_menu_buttons[-1].pack()
+                self.peer_menu_buttons[-1].grid()
 
     def connect(self, peer_ip):
         """ Establishes connection with given peer"""
@@ -155,8 +153,6 @@ class Application(tk.Tk):
             else:
                 continue
         return filenames
-        
-    
 
     def add_files_to_frame(self, frame, is_peer_frame):
         """
@@ -194,11 +190,11 @@ class Application(tk.Tk):
                     check_buttons.append(tk.Menubutton(frame, text=filename))
             # Add file Checkbuttons to peer_frame
             for checkbutton in check_buttons:
-                checkbutton.pack()
+                checkbutton.grid()
             # Restore 'Download' button
             download_files_method = partial(self.download_files, frame)
             download_button = tk.Button(frame, text='Download files', command=download_files_method)
-            download_button.pack()
+            download_button.grid()
         # These are files that we want to share with particular peer
         else:
             # Select file that we want to share
@@ -222,24 +218,34 @@ class Application(tk.Tk):
                         widget.destroy()
                 # No Label with matching filename found - create one
                 label = tk.Label(frame, text=filename)
-                label.pack()
+                label.grid()
                 # Restore 'Add files' button
                 add_files_method = partial(self.add_files_to_frame, frame, False)
                 add_button = tk.Button(frame, text='Add files', command=add_files_method)
-                add_button.pack()
+                add_button.grid()
                 send_button_method = partial(self.send_selected_files, filename)
                 send_button = tk.Button(frame, text='Send files', command=send_button_method)
-                send_button.pack()
+                send_button.grid()
 
-    def send_selected_files(self,file):
-    	print("Sending files...")
-    	#print(self.peer_ip)
-    	send_file(self.peer_ip, file)
+    def send_selected_files(self, file):
+        print("Sending files...")
+        # print(self.peer_ip)
+        send_file(self.peer_ip, file)
 
     def download_files(self, frame):
         """ Downloads files from peer """
 
         pass
+
+    def create_frames(self, peer_ip):
+        """ Create new resource frames """
+
+        frames = dict()
+        my_device_frame = tk.LabelFrame(self, text=self.host_discovery.ip, width=400, height=500)
+        peer_frame = tk.LabelFrame(self, text=peer_ip, width=400, height=500)
+        frames["my_device_frame"] = my_device_frame
+        frames["peer_frame"] = peer_frame
+        return frames
 
     def create_resource_widgets(self, peer):
         """
@@ -256,11 +262,11 @@ class Application(tk.Tk):
         download_files_method = partial(self.download_files, peer_frame)
         # My part of resources
         add_button = tk.Button(my_device_frame, text='Add files', command=add_files_method)
-        
+
         # Peer's part of resources
         download_button = tk.Button(peer_frame, text='Download files', command=download_files_method)
-        add_button.pack()
-        download_button.pack()
+        add_button.grid()
+        download_button.grid()
         widgets['my_host_widgets'] = [add_button]
         widgets['peer_widgets'] = [download_button]
         return widgets
@@ -324,16 +330,6 @@ class Application(tk.Tk):
             else:
                 continue
 
-    def create_frames(self, peer_ip):
-        """ Create new resource frames """
-
-        frames = dict()
-        my_device_frame = tk.LabelFrame(self, text=self.host_discovery.ip, width=400, height=500)
-        peer_frame = tk.LabelFrame(self, text=peer_ip, width=400, height=500)
-        frames["my_device_frame"] = my_device_frame
-        frames["peer_frame"] = peer_frame
-        return frames
-
     def accept(self, peer):
         """ Ask user whether he wants to establish connection with peer of given ip address"""
 
@@ -363,5 +359,5 @@ class Application(tk.Tk):
                 device_button['menu'] = menu
                 # Track new Menubutton
                 self.peer_menu_buttons.append(device_button)
-                self.peer_menu_buttons[-1].pack()
+                self.peer_menu_buttons[-1].grid()
         return response
