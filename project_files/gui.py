@@ -4,6 +4,7 @@ import threading
 from functools import partial
 from tkinter import filedialog
 from qr_share import local_share
+from client import send_file
 
 
 class Application(tk.Tk):
@@ -24,6 +25,7 @@ class Application(tk.Tk):
         self.hdThread.start()
         self.title("Title")
         self.create_widgets()
+        self.peer_ip = ""
 
         # Elements to track
         self.peer_menu_buttons = list()
@@ -46,6 +48,7 @@ class Application(tk.Tk):
         
         local_share_button = tk.Button( text="Share files locally", command=lambda : local_share())
         local_share_button.grid()
+
 
     def create_widgets(self):
         """ Creates all necessary widgets"""
@@ -70,6 +73,7 @@ class Application(tk.Tk):
 
         find_devices_button = tk.Button(self.top_frame, text="Find Devices", command=self.scan)
         find_devices_button.grid()
+        
 
     def set_downloads_folder(self):
         """ Sets destination folder for files to be downloaded """
@@ -123,6 +127,7 @@ class Application(tk.Tk):
                     show_resources_method = partial(self.show_resources, peer_ip)
                     menu.add_command(label="Disconnect", command=disconnect_method)
                     menu.add_command(label="Show resources", command=show_resources_method)
+                    self.peer_ip = peer_ip
                     # Replace 'Connect' command with 'Disconnect' and 'Show resources'
                     peer_menu_button['menu'] = menu
                     # Tracking shared resources frames
@@ -150,6 +155,8 @@ class Application(tk.Tk):
             else:
                 continue
         return filenames
+        
+    
 
     def add_files_to_frame(self, frame, is_peer_frame):
         """
@@ -220,6 +227,14 @@ class Application(tk.Tk):
                 add_files_method = partial(self.add_files_to_frame, frame, False)
                 add_button = tk.Button(frame, text='Add files', command=add_files_method)
                 add_button.pack()
+                send_button_method = partial(self.send_selected_files, filename)
+                send_button = tk.Button(frame, text='Send files', command=send_button_method)
+                send_button.pack()
+
+    def send_selected_files(self,file):
+    	print("Sending files...")
+    	#print(self.peer_ip)
+    	send_file(self.peer_ip, file)
 
     def download_files(self, frame):
         """ Downloads files from peer """
@@ -241,6 +256,7 @@ class Application(tk.Tk):
         download_files_method = partial(self.download_files, peer_frame)
         # My part of resources
         add_button = tk.Button(my_device_frame, text='Add files', command=add_files_method)
+        
         # Peer's part of resources
         download_button = tk.Button(peer_frame, text='Download files', command=download_files_method)
         add_button.pack()
@@ -322,6 +338,8 @@ class Application(tk.Tk):
         """ Ask user whether he wants to establish connection with peer of given ip address"""
 
         peer_ip = peer.getpeername()[0]
+        print(peer_ip)
+        self.peer_ip = peer_ip
         response = messagebox.askyesno("Access request", f"Accept connection from {peer_ip} ?")
         if response:
             # Check if peer already resides in devices_frame
